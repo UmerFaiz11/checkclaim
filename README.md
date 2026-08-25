@@ -75,11 +75,25 @@ happens it falls back to UNKNOWN, never to a guess.
 
 ## install
 
-Requires Python 3 and git. No dependencies beyond the standard library. Works the same
-whether you use Claude Code from the terminal, the VS Code extension, or the Desktop app,
-since all three share the same engine and the same settings.
+Requires **Claude Code** specifically, not just any Claude subscription, since it needs
+real file and terminal access to your project to set itself up. Works the same whether
+you're using the terminal, the VS Code extension, or the Desktop app, since all three
+share the same engine and settings. A plain claude.ai chat can't install this for you,
+it doesn't have access to your local files.
 
-### option A: as a hook (works today, this is what's actually been tested)
+### the easy way: ask Claude Code to do it
+
+Clone or download this repo, then from inside the project you want to protect, paste
+this into Claude Code:
+
+> Install checkclaim into this project by following the steps in INSTALL.md at
+> /path/to/checkclaim (use the real path to wherever you put it).
+
+It'll read `INSTALL.md`, edit `.claude/settings.json` for you, and tell you what it
+changed. This isn't a separate mechanism from the manual steps below, it's Claude Code
+doing exactly those same steps for you instead of you doing them by hand.
+
+### option A: by hand (works today, this is what's actually been tested)
 
 1. Clone this repo somewhere permanent:
    ```bash
