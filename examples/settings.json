@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "python3 /absolute/path/to/checkclaim/stop_hook.py" } ] }
+    ]
+  }
+}

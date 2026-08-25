@@ -1,0 +1,10 @@
+{
+  "name": "checkclaim",
+  "displayName": "checkclaim",
+  "description": "Checks whether an AI coding agent's claims (tests passed, file created, build succeeded, commit made) are actually true, using independently captured evidence instead of trusting its self-report.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Umer Faiz"
+  },
+  "license": "MIT"
+}

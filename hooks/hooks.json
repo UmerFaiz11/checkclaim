@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/stop_hook.py",
+            "timeout": 30,
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
