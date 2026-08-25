@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import claims
 import ledger
 import reconcile
+import summary
 
 
 def run_git(repo_dir, *args):
@@ -196,6 +197,39 @@ class ReconcileTests(unittest.TestCase):
         result = reconcile.check_file_created(self.repo, "../../../../etc/passwd")
         self.assertEqual(result["status"], "UNKNOWN")
         self.assertIn("outside the project", result["output"])
+
+
+class SummaryTests(unittest.TestCase):
+    def setUp(self):
+        self.repo = make_repo()
+
+    def tearDown(self):
+        shutil.rmtree(self.repo, ignore_errors=True)
+
+    def test_load_turns_returns_none_when_no_log_exists(self):
+        self.assertIsNone(summary.load_turns(self.repo))
+
+    def test_load_turns_reads_real_logged_entries(self):
+        log_dir = os.path.join(self.repo, ".checkclaim")
+        os.makedirs(log_dir)
+        with open(os.path.join(log_dir, "verdicts.jsonl"), "w") as f:
+            f.write('{"ts": 1000, "results": [{"claim_type": "TEST_PASSED", "status": "VERIFIED"}]}\n')
+            f.write('{"ts": 1001, "results": [{"claim_type": null, "status": "UNKNOWN"}]}\n')
+
+        turns = summary.load_turns(self.repo)
+        self.assertEqual(len(turns), 2)
+
+    def test_build_report_counts_verdicts_correctly(self):
+        turns = [
+            {"ts": 1000, "results": [{"claim_type": "TEST_PASSED", "status": "VERIFIED"}]},
+            {"ts": 1001, "results": [{"claim_type": "TEST_PASSED", "status": "CONTRADICTION"}]},
+            {"ts": 1002, "results": [{"claim_type": None, "status": "UNKNOWN"}]},
+        ]
+        report = summary.build_report(turns)
+        self.assertIn("VERIFIED          1", report)
+        self.assertIn("CONTRADICTION     1", report)
+        self.assertIn("UNKNOWN           1", report)
+        self.assertIn("claim text not recognized:  1", report)
 
 
 if __name__ == "__main__":

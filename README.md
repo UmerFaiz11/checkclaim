@@ -119,7 +119,36 @@ examples below already do, don't just paste a bare path in.
 3. Add `.checkclaim/` to that repo's `.gitignore`.
 
 That's it. Just use Claude Code normally. A `.checkclaim/verdicts.jsonl` file will start
-filling up in that project with what actually happened at the end of each turn.
+filling up in that project with what actually happened at the end of each turn. It's raw
+JSON though, one line per turn, not exactly pleasant to read by hand. To actually see
+what's in it:
+
+```bash
+./checkclaim --repo /path/to/that/project summary
+```
+
+which prints something like:
+
+```
+turns logged: 12
+active days: 3 (2026-08-23 to 2026-08-25)
+claims scored: 15
+
+verdicts:
+  VERIFIED          11  (73%)
+  CONTRADICTION     1  (7%)
+  UNKNOWN           3  (20%)
+
+claim types seen:
+  TEST_PASSED          9
+  FILE_CREATED         4
+  BUILD_SUCCEEDED      2
+
+why the UNKNOWNs happened:
+  claim text not recognized:  1
+  evidence was stale:         2
+  no evidence recorded:       0
+```
 
 **Verified for real:** ran this against a genuinely separate, independent headless Claude
 Code session (`claude -p`, not this same conversation) doing real work in a throwaway repo.
@@ -157,6 +186,7 @@ You can also use it by hand, without the hook:
 ```bash
 ./checkclaim run test -- npm test
 ./checkclaim verify "the tests passed"
+./checkclaim summary
 ```
 
 ## what it can check today

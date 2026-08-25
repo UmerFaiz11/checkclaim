@@ -4,6 +4,7 @@ checkclaim command line tool.
 
     checkclaim run <name> -- <command>   run something and record the real result
     checkclaim verify "<claim text>"     check a claim against what's recorded
+    checkclaim summary                   see what's been logged so far, in one place
 """
 
 import argparse
@@ -14,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import claims
 import ledger
 import reconcile
+import summary
 
 EXIT_CODES = {"VERIFIED": 0, "CONTRADICTION": 1, "UNKNOWN": 2}
 
@@ -70,6 +72,22 @@ def cmd_verify(args):
     return EXIT_CODES[result["status"]]
 
 
+def cmd_summary(args):
+    turns = summary.load_turns(args.repo)
+    log_path = os.path.join(args.repo, ".checkclaim", "verdicts.jsonl")
+
+    if turns is None:
+        print(f"No {log_path} found yet.")
+        print("Either the hook isn't wired up in this project, or nothing's happened here yet.")
+        return 0
+    if not turns:
+        print(f"{log_path} exists but is empty.")
+        return 0
+
+    print(summary.build_report(turns))
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(prog="checkclaim")
     parser.add_argument("--repo", default=".", help="working directory (default: cwd)")
@@ -85,6 +103,9 @@ def main():
     p_verify.add_argument("--freshness", type=int, default=300,
                            help="seconds within which a commit counts as recent (default 300)")
     p_verify.set_defaults(func=cmd_verify)
+
+    p_summary = sub.add_parser("summary", help="show a readable summary of what's been logged")
+    p_summary.set_defaults(func=cmd_summary)
 
     args = parser.parse_args()
 
