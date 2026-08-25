@@ -75,283 +75,101 @@ happens it falls back to UNKNOWN, never to a guess.
 
 ## install
 
-Requires **Claude Code** specifically, not just any Claude subscription, since it needs
-real file and terminal access to your project to set itself up. Works the same whether
-you're using the terminal, the VS Code extension, or the Desktop app, since all three
-share the same engine and settings. A plain claude.ai chat can't install this for you,
-it doesn't have access to your local files.
+Two ways to use checkclaim, pick the one that matches what you actually have:
 
-If you've never used git, a terminal, or VS Code before, the next section walks through
-every single click. If you already have, skip down to "the short version."
+- **Free Claude** (the web chat at claude.ai, or the Claude app, no paid Claude Code
+  access): a manual command you run yourself, a few extra steps, but works for anyone.
+- **Claude Code** (CLI, VS Code extension, or the desktop app, on Pro/Max/Team/Enterprise):
+  Claude Code sets everything up for you, and then it runs automatically forever after.
 
-### never done this before? full walkthrough
+Both need the same three things installed first.
 
-#### what to install first
+### what you need installed first
 
-Three things need to already be on your computer. If you're not sure whether you have
-them, the check for each one is included, just try that first.
+**1. Python 3**, from [python.org/downloads](https://www.python.org/downloads/). On
+Windows, tick **"Add python.exe to PATH"** on the installer's first screen, it's easy to
+miss and causes confusing errors later if you skip it. Check it worked by opening a
+terminal (see below) and typing `python3 --version`, you should see a version number.
 
-**1. Python 3**
+**2. Git**, from [git-scm.com/downloads](https://git-scm.com/downloads) on Windows, or
+just type `git --version` in a terminal on a Mac and it'll offer to install itself if
+it's missing. Check it worked with `git --version`.
 
-- **Windows:** go to [python.org/downloads](https://www.python.org/downloads/), click the
-  big "Download Python" button, and run the installer once it downloads. On the very
-  first screen of the installer, there's a checkbox at the bottom that says **"Add
-  python.exe to PATH"**, tick it before clicking Install. This step gets skipped a lot
-  and causes confusing errors later, so don't skip it.
-- **Mac:** go to the same page, download the macOS installer, open it, and click through
-  the installer like any other app.
-- **Check it worked:** open a terminal (see the next section for exactly how) and type
-  `python3 --version` then press Enter. You should see something like `Python 3.12.1`.
-  If instead you get an error saying the command isn't recognized, the install didn't
-  finish, or PATH wasn't added, try reinstalling and make sure that checkbox is ticked.
+**3. VS Code**, from [code.visualstudio.com](https://code.visualstudio.com), install it
+like any other app. To open a terminal inside it: click **Terminal** in the top menu,
+then **New Terminal**. A panel opens at the bottom, that's where you type the commands
+below.
 
-**2. Git**
+If you're going the Claude Code route, also install the **Claude Code** extension: click
+the Extensions icon on VS Code's left sidebar (four small squares), search "Claude Code",
+click Install.
 
-- **Windows:** go to [git-scm.com/downloads](https://git-scm.com/downloads), download for
-  Windows, run the installer. The default options it suggests the whole way through are
-  fine, just keep clicking Next and then Install.
-- **Mac:** open a terminal and type `git --version`. If it's not already installed, macOS
-  will pop up its own prompt offering to install it, just click Install and wait.
-- **Check it worked:** type `git --version` in a terminal, you should see a version
-  number print out.
+### free Claude (web chat or the Claude app)
 
-**3. VS Code, plus the Claude Code extension**
-
-- Go to [code.visualstudio.com](https://code.visualstudio.com), download it for your
-  operating system, install it like any other application.
-- Open VS Code. On the left-hand sidebar, find the icon that looks like four small
-  squares (this is Extensions, its exact position can shift slightly between VS Code
-  versions, it's always on that left sidebar though). Click it.
-- In the search box that appears, type **Claude Code**, find the official one, click
-  **Install**.
-- You'll need to sign in with your Claude/Anthropic account the first time you use it,
-  it'll prompt you for that.
-
-#### opening a terminal inside VS Code
-
-You'll use this a few times below.
-
-1. With VS Code open, look at the very top of the window for a menu bar: File, Edit,
-   Selection, View, Go, Run, Terminal, Help.
-2. Click **Terminal**.
-3. Click **New Terminal** in the menu that drops down.
-4. A panel opens at the bottom of the window with some text and a blinking cursor after
-   it, that's your terminal. Anywhere in that panel, whatever you type appears next to
-   that cursor. Press Enter to actually run what you typed.
-
-#### step 1: download checkclaim onto your computer
-
-You only do this once, ever, no matter how many projects you later turn it on for.
-
-1. Open VS Code, open a terminal in it (steps just above).
-2. Decide where to put it, for example, type this and press Enter to go to your
-   Documents folder:
+1. Create a folder for your project, or use one you already have. Open it in VS Code
+   (**File → Open Folder...**), then open a terminal in it.
+2. Install checkclaim as a real command, once:
    ```bash
-   cd Documents
+   pipx install git+https://github.com/UmerFaiz11/checkclaim.git
    ```
-3. Type this exactly, then press Enter:
+3. From now on, whenever Claude gives you code and says something like "the tests
+   should pass now": paste the code into your project yourself like you already do, then
+   check the claim for real:
+   ```bash
+   checkclaim check test "the tests should pass now" -- npm test
+   ```
+   Or, to avoid retyping the claim since you probably just copied it anyway:
+   ```bash
+   checkclaim check test --clipboard -- npm test
+   ```
+4. It prints **VERIFIED**, **CONTRADICTION**, or **UNKNOWN** right there in the terminal,
+   immediately, based on what `npm test` (or whatever your real command is) actually did.
+
+This is a manual habit, not automatic, since a plain chat has no way to reach your files
+on its own, that's a real platform limit, not something checkclaim can code around. Tested
+for real: installed into a clean environment straight from this GitHub repo, and it worked
+immediately, no setup beyond that one install command.
+
+### Claude Code (CLI, VS Code extension, or desktop app)
+
+Simpler, because Claude Code does the setup for you.
+
+1. Open a terminal, download checkclaim once:
    ```bash
    git clone https://github.com/UmerFaiz11/checkclaim.git
    ```
-4. You'll see some lines of text scroll by, that's normal, it's git downloading the
-   files. When it stops and gives you a new prompt, it's done. There is now a folder
-   called `checkclaim` inside your Documents folder (or wherever you ran the command).
-5. **Write down or remember the full path to this folder**, you'll need it in step 3.
-   An easy way to get it precisely: in VS Code's file explorer or in Windows File
-   Explorer / macOS Finder, right-click the `checkclaim` folder and look for an option
-   like **Copy Path** or **Copy as Path**, use that instead of typing it from memory.
-
-#### step 2: open the project you actually want to protect
-
-Not the checkclaim folder from step 1, your own coding project, the one you already use
-Claude Code on.
-
-1. In VS Code, click **File** in the top menu, then **Open Folder...**
-2. Browse to your project's folder, select it, click **Select Folder** (or **Open** on
-   some systems).
-3. VS Code reloads with your project open. Open a fresh terminal here too (Terminal →
-   New Terminal), this terminal is now inside your project, not inside checkclaim.
-
-#### step 3: turn checkclaim on for this project
-
-By far the easiest way is to have Claude Code do this step itself, instead of editing
-any files by hand.
-
-1. Open the Claude Code panel inside VS Code (look for a Claude icon on the sidebar, or
-   press **Ctrl+Shift+P** on Windows / **Cmd+Shift+P** on Mac to open the Command
-   Palette, then type "Claude Code" to find the command that opens it).
-2. In the chat box, type the following, but replace the path with your real path from
-   step 1:
+2. Open your actual project in VS Code (the one you want to protect, not the checkclaim
+   folder), open Claude Code there, and paste in:
    > Install checkclaim into this project by following the steps in INSTALL.md at
-   > C:\Users\yourname\Documents\checkclaim
-
-   (on Mac it'll look more like `/Users/yourname/Documents/checkclaim`)
-3. Press Enter and let it work. It reads the real instructions in this repo's
-   `INSTALL.md` and sets everything up itself, editing a config file for you, and then
-   tells you exactly what it changed.
-
-If you'd genuinely rather do it by hand instead of asking Claude Code, see "option A: by
-hand" below, it's the same end result, just typed out yourself with an exact file to
-copy and paste.
-
-#### step 4: just use Claude Code like you normally would
-
-Nothing else to do. Keep coding with Claude Code in this project exactly like before.
-checkclaim now quietly runs in the background every time a turn finishes.
-
-#### step 5: checking what it caught
-
-Whenever you're curious, open a terminal in your project folder again (Terminal → New
-Terminal) and type this, swapping in your real path from step 1:
-
-```bash
-python3 "C:/Users/yourname/Documents/checkclaim/cli.py" --repo . summary
-```
-
-That prints a plain-English report of everything checkclaim has checked so far. See
-"where can I see the results" further down for exactly what that looks like and what
-each part means.
-
-### the short version, if you already know git and terminals
-
-Clone or download this repo, then from inside the project you want to protect, paste
-this into Claude Code:
-
-> Install checkclaim into this project by following the steps in INSTALL.md at
-> /path/to/checkclaim (use the real path to wherever you put it).
-
-It'll read `INSTALL.md`, edit `.claude/settings.json` for you, and tell you what it
-changed. This isn't a separate mechanism from the manual steps below, it's Claude Code
-doing exactly those same steps for you instead of you doing them by hand.
-
-**Important: quote the path in the hook command if it contains spaces.** This bit a real
-test (see below), and it'll bite you too if you cloned this into something like
-`My Projects/checkclaim`. Wrap the path in escaped quotes inside the JSON string, like the
-examples below already do, don't just paste a bare path in.
-
-### option A: by hand
-
-1. Clone this repo somewhere permanent:
+   > /path/to/checkclaim (use the real path from step 1)
+3. That's it. Claude Code edits a config file for you and tells you what it changed. From
+   here on, just use Claude Code normally, checkclaim runs quietly in the background.
+4. Whenever you want to see what it's caught, swap in your real path from step 1:
    ```bash
-   git clone https://github.com/UmerFaiz11/checkclaim.git
+   python3 "/path/to/checkclaim/cli.py" --repo /path/to/your/project summary
    ```
-2. In the repo you want to use it in, add a `Stop` hook to `.claude/settings.json`
-   (merge with anything already there, don't overwrite other hooks):
-   ```json
-   {
-     "hooks": {
-       "Stop": [
-         { "hooks": [ { "type": "command", "command": "python3 \"/path/to/checkclaim/stop_hook.py\"" } ] }
-       ]
-     }
-   }
+   which prints something like:
    ```
-   Swap in the real path to where you cloned it. See `examples/settings.json`.
-3. Add `.checkclaim/` to that repo's `.gitignore`.
+   turns logged: 12
+   active days: 3 (2026-08-23 to 2026-08-25)
+   claims scored: 15
 
-That's it. Just use Claude Code normally from here on, checkclaim runs in the background.
-See "where can I see the results" below for how to actually check what it caught.
+   verdicts:
+     VERIFIED          11  (73%)
+     CONTRADICTION     1  (7%)
+     UNKNOWN           3  (20%)
+   ```
 
-**Verified for real:** ran this against a genuinely separate, independent headless Claude
-Code session (`claude -p`, not this same conversation) doing real work in a throwaway repo.
-It created a file, ran `npm test` for real, and reported "tests passed". checkclaim's hook
-observed the actual `npm test` call from Claude Code's own transcript, saw the real exit
-code (0), and logged **VERIFIED**. A separate run where the agent claimed "tests passed"
-without ever running anything test-shaped correctly logged **UNKNOWN**. Both outcomes are
-sitting in this repo's commit history as raw evidence, not just a claim in this README.
+**Verified for real**, not just written: a genuinely separate, independent headless
+Claude Code session (not this conversation) did real work in a throwaway repo, ran `npm
+test` for real, and reported "tests passed". checkclaim observed the actual command from
+Claude Code's own transcript, saw the real exit code, and correctly logged VERIFIED. A
+separate run where the agent claimed "tests passed" without running anything correctly
+logged UNKNOWN instead.
 
-### option B: as a plugin, avoids hand-editing settings.json
-
-Claude Code has a plugin system, and this repo is laid out as one (`.claude-plugin/plugin.json`
-plus `hooks/hooks.json`), so you can point Claude Code at the cloned folder directly instead
-of copying JSON by hand:
-
-```bash
-claude --plugin-dir /path/to/checkclaim
-```
-
-**Also verified for real**, same method as option A above: a real, independent headless
-session loaded the plugin this way, ran `npm test`, claimed "tests passed", and checkclaim
-correctly logged VERIFIED. `claude plugin validate` also passes clean against this repo.
-
-One real bug this testing found and fixed: `hooks/hooks.json` originally referenced
-`${CLAUDE_PLUGIN_ROOT}/stop_hook.py` without quotes, which breaks the moment that path
-contains a space (which it did, in testing). Fixed by quoting it. Worth knowing this class
-of bug exists if you ever edit the hook command yourself.
-
-A proper `/plugin install` flow from a public marketplace would still need one more file
-(`marketplace.json`) that hasn't been built yet, so `--plugin-dir` is as far as the plugin
-path goes for now, that part of the earlier caveat still stands.
-
-## where can I see the results
-
-Once it's installed, either way, a `.checkclaim/verdicts.jsonl` file starts filling up in
-that project, one line per turn, with what checkclaim actually found. It's raw JSON
-though, not something you'd want to read by hand. To see it properly:
-
-```bash
-./checkclaim --repo /path/to/that/project summary
-```
-
-which prints something like:
-
-```
-turns logged: 12
-active days: 3 (2026-08-23 to 2026-08-25)
-claims scored: 15
-
-verdicts:
-  VERIFIED          11  (73%)
-  CONTRADICTION     1  (7%)
-  UNKNOWN           3  (20%)
-
-claim types seen:
-  TEST_PASSED          9
-  FILE_CREATED         4
-  BUILD_SUCCEEDED      2
-
-why the UNKNOWNs happened:
-  claim text not recognized:  1
-  evidence was stale:         2
-  no evidence recorded:       0
-```
-
-## using it without the hook
-
-Not everyone using an AI to write code is on Claude Code. If you're using the free or
-plain claude.ai chat, there's no hook to install, because that chat has no access to your
-files or terminal at all, that's a real platform limit, not something checkclaim can code
-around. But the actual checking logic doesn't care where a claim came from, it just needs
-the text and a way to check it, so you can still use it by hand:
-
-```bash
-# install once, works anywhere on your PATH from then on
-pipx install git+https://github.com/UmerFaiz11/checkclaim.git
-
-# after Claude in chat gives you code and says "the tests should pass now":
-# 1. paste the code into your project yourself, like you already do
-# 2. actually run the tests and check the claim, in one step
-checkclaim check test "the tests should pass now" -- npm test
-```
-
-`pipx` (or plain `pip install .` if you'd rather run it from the cloned repo) gives you a
-real `checkclaim` command, no need to remember a path to a script. This has been tested
-for real: installed into a clean environment, and `checkclaim check ...` worked
-immediately, no setup beyond the one install command.
-
-If you'd rather not retype Claude's claim, since you probably just copied it anyway to
-grab the code around it, use `--clipboard` instead of typing it out:
-
-```bash
-checkclaim check test --clipboard -- npm test
-checkclaim verify --clipboard
-```
-
-It reads whatever's currently on your clipboard and checks that. Honest tradeoff here:
-this is a deliberate, manual habit, not the invisible safety net the Claude Code hook is.
-Nothing runs automatically, you have to remember to do it. But it's a real 5-second gut
-check before trusting a confident-sounding claim, and it costs one command, not a script
-and a settings file.
+If you'd rather skip the terminal entirely and edit the config by hand, or use Claude
+Code's plugin system instead (`claude --plugin-dir`), both are documented in `INSTALL.md`
+and `examples/settings.json` in this repo.
 
 ## what it can check today
 
