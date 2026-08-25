@@ -81,7 +81,138 @@ you're using the terminal, the VS Code extension, or the Desktop app, since all 
 share the same engine and settings. A plain claude.ai chat can't install this for you,
 it doesn't have access to your local files.
 
-### the easy way: ask Claude Code to do it
+If you've never used git, a terminal, or VS Code before, the next section walks through
+every single click. If you already have, skip down to "the short version."
+
+### never done this before? full walkthrough
+
+#### what to install first
+
+Three things need to already be on your computer. If you're not sure whether you have
+them, the check for each one is included, just try that first.
+
+**1. Python 3**
+
+- **Windows:** go to [python.org/downloads](https://www.python.org/downloads/), click the
+  big "Download Python" button, and run the installer once it downloads. On the very
+  first screen of the installer, there's a checkbox at the bottom that says **"Add
+  python.exe to PATH"**, tick it before clicking Install. This step gets skipped a lot
+  and causes confusing errors later, so don't skip it.
+- **Mac:** go to the same page, download the macOS installer, open it, and click through
+  the installer like any other app.
+- **Check it worked:** open a terminal (see the next section for exactly how) and type
+  `python3 --version` then press Enter. You should see something like `Python 3.12.1`.
+  If instead you get an error saying the command isn't recognized, the install didn't
+  finish, or PATH wasn't added, try reinstalling and make sure that checkbox is ticked.
+
+**2. Git**
+
+- **Windows:** go to [git-scm.com/downloads](https://git-scm.com/downloads), download for
+  Windows, run the installer. The default options it suggests the whole way through are
+  fine, just keep clicking Next and then Install.
+- **Mac:** open a terminal and type `git --version`. If it's not already installed, macOS
+  will pop up its own prompt offering to install it, just click Install and wait.
+- **Check it worked:** type `git --version` in a terminal, you should see a version
+  number print out.
+
+**3. VS Code, plus the Claude Code extension**
+
+- Go to [code.visualstudio.com](https://code.visualstudio.com), download it for your
+  operating system, install it like any other application.
+- Open VS Code. On the left-hand sidebar, find the icon that looks like four small
+  squares (this is Extensions, its exact position can shift slightly between VS Code
+  versions, it's always on that left sidebar though). Click it.
+- In the search box that appears, type **Claude Code**, find the official one, click
+  **Install**.
+- You'll need to sign in with your Claude/Anthropic account the first time you use it,
+  it'll prompt you for that.
+
+#### opening a terminal inside VS Code
+
+You'll use this a few times below.
+
+1. With VS Code open, look at the very top of the window for a menu bar: File, Edit,
+   Selection, View, Go, Run, Terminal, Help.
+2. Click **Terminal**.
+3. Click **New Terminal** in the menu that drops down.
+4. A panel opens at the bottom of the window with some text and a blinking cursor after
+   it, that's your terminal. Anywhere in that panel, whatever you type appears next to
+   that cursor. Press Enter to actually run what you typed.
+
+#### step 1: download checkclaim onto your computer
+
+You only do this once, ever, no matter how many projects you later turn it on for.
+
+1. Open VS Code, open a terminal in it (steps just above).
+2. Decide where to put it, for example, type this and press Enter to go to your
+   Documents folder:
+   ```bash
+   cd Documents
+   ```
+3. Type this exactly, then press Enter:
+   ```bash
+   git clone https://github.com/UmerFaiz11/checkclaim.git
+   ```
+4. You'll see some lines of text scroll by, that's normal, it's git downloading the
+   files. When it stops and gives you a new prompt, it's done. There is now a folder
+   called `checkclaim` inside your Documents folder (or wherever you ran the command).
+5. **Write down or remember the full path to this folder**, you'll need it in step 3.
+   An easy way to get it precisely: in VS Code's file explorer or in Windows File
+   Explorer / macOS Finder, right-click the `checkclaim` folder and look for an option
+   like **Copy Path** or **Copy as Path**, use that instead of typing it from memory.
+
+#### step 2: open the project you actually want to protect
+
+Not the checkclaim folder from step 1, your own coding project, the one you already use
+Claude Code on.
+
+1. In VS Code, click **File** in the top menu, then **Open Folder...**
+2. Browse to your project's folder, select it, click **Select Folder** (or **Open** on
+   some systems).
+3. VS Code reloads with your project open. Open a fresh terminal here too (Terminal →
+   New Terminal), this terminal is now inside your project, not inside checkclaim.
+
+#### step 3: turn checkclaim on for this project
+
+By far the easiest way is to have Claude Code do this step itself, instead of editing
+any files by hand.
+
+1. Open the Claude Code panel inside VS Code (look for a Claude icon on the sidebar, or
+   press **Ctrl+Shift+P** on Windows / **Cmd+Shift+P** on Mac to open the Command
+   Palette, then type "Claude Code" to find the command that opens it).
+2. In the chat box, type the following, but replace the path with your real path from
+   step 1:
+   > Install checkclaim into this project by following the steps in INSTALL.md at
+   > C:\Users\yourname\Documents\checkclaim
+
+   (on Mac it'll look more like `/Users/yourname/Documents/checkclaim`)
+3. Press Enter and let it work. It reads the real instructions in this repo's
+   `INSTALL.md` and sets everything up itself, editing a config file for you, and then
+   tells you exactly what it changed.
+
+If you'd genuinely rather do it by hand instead of asking Claude Code, see "option A: by
+hand" below, it's the same end result, just typed out yourself with an exact file to
+copy and paste.
+
+#### step 4: just use Claude Code like you normally would
+
+Nothing else to do. Keep coding with Claude Code in this project exactly like before.
+checkclaim now quietly runs in the background every time a turn finishes.
+
+#### step 5: checking what it caught
+
+Whenever you're curious, open a terminal in your project folder again (Terminal → New
+Terminal) and type this, swapping in your real path from step 1:
+
+```bash
+python3 "C:/Users/yourname/Documents/checkclaim/cli.py" --repo . summary
+```
+
+That prints a plain-English report of everything checkclaim has checked so far. See
+"where can I see the results" further down for exactly what that looks like and what
+each part means.
+
+### the short version, if you already know git and terminals
 
 Clone or download this repo, then from inside the project you want to protect, paste
 this into Claude Code:
