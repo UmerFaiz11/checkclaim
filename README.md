@@ -118,37 +118,8 @@ examples below already do, don't just paste a bare path in.
    Swap in the real path to where you cloned it. See `examples/settings.json`.
 3. Add `.checkclaim/` to that repo's `.gitignore`.
 
-That's it. Just use Claude Code normally. A `.checkclaim/verdicts.jsonl` file will start
-filling up in that project with what actually happened at the end of each turn. It's raw
-JSON though, one line per turn, not exactly pleasant to read by hand. To actually see
-what's in it:
-
-```bash
-./checkclaim --repo /path/to/that/project summary
-```
-
-which prints something like:
-
-```
-turns logged: 12
-active days: 3 (2026-08-23 to 2026-08-25)
-claims scored: 15
-
-verdicts:
-  VERIFIED          11  (73%)
-  CONTRADICTION     1  (7%)
-  UNKNOWN           3  (20%)
-
-claim types seen:
-  TEST_PASSED          9
-  FILE_CREATED         4
-  BUILD_SUCCEEDED      2
-
-why the UNKNOWNs happened:
-  claim text not recognized:  1
-  evidence was stale:         2
-  no evidence recorded:       0
-```
+That's it. Just use Claude Code normally from here on, checkclaim runs in the background.
+See "where can I see the results" below for how to actually check what it caught.
 
 **Verified for real:** ran this against a genuinely separate, independent headless Claude
 Code session (`claude -p`, not this same conversation) doing real work in a throwaway repo.
@@ -181,12 +152,45 @@ A proper `/plugin install` flow from a public marketplace would still need one m
 (`marketplace.json`) that hasn't been built yet, so `--plugin-dir` is as far as the plugin
 path goes for now, that part of the earlier caveat still stands.
 
-You can also use it by hand, without the hook:
+## where can I see the results
+
+Once it's installed, either way, a `.checkclaim/verdicts.jsonl` file starts filling up in
+that project, one line per turn, with what checkclaim actually found. It's raw JSON
+though, not something you'd want to read by hand. To see it properly:
+
+```bash
+./checkclaim --repo /path/to/that/project summary
+```
+
+which prints something like:
+
+```
+turns logged: 12
+active days: 3 (2026-08-23 to 2026-08-25)
+claims scored: 15
+
+verdicts:
+  VERIFIED          11  (73%)
+  CONTRADICTION     1  (7%)
+  UNKNOWN           3  (20%)
+
+claim types seen:
+  TEST_PASSED          9
+  FILE_CREATED         4
+  BUILD_SUCCEEDED      2
+
+why the UNKNOWNs happened:
+  claim text not recognized:  1
+  evidence was stale:         2
+  no evidence recorded:       0
+```
+
+You can also check one specific claim yourself, by hand, without waiting for the hook to
+fire on its own:
 
 ```bash
 ./checkclaim run test -- npm test
 ./checkclaim verify "the tests passed"
-./checkclaim summary
 ```
 
 ## what it can check today
@@ -257,11 +261,11 @@ adversarial scenarios designed to try to trick it, ordinary real coding tasks, a
 install paths described above. It has not produced a false VERIFIED in any of that
 testing so far, and that's the one property this project cares about most.
 
-What it hasn't had yet: a real developer other than the person who built it, using it on
-their own project, for their own reasons. Everything above is closer to "the mechanism
-holds up under real conditions" than "people other than me have found this useful." If
-you try it, especially if something looks wrong or annoying, that's genuinely useful
-information, please open an issue.
+What it hasn't had yet: nobody but me has actually used this on their own project, for
+their own reasons. Everything above is closer to "the mechanism holds up under real
+conditions" than "someone other than me has found this useful." If you try it, especially
+if something looks wrong or annoying, that's genuinely useful information, please open an
+issue.
 
 ## license
 
