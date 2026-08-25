@@ -14,8 +14,40 @@ anything that doesn't clearly match.
 
 import re
 
-_TEST_RE = re.compile(r"\btests?\s+(pass(ed)?|succeeded)\b", re.I)
-_BUILD_RE = re.compile(r"\bbuild\s+(succeeded|passed|success(ful)?)\b", re.I)
+# a small, fixed set of words that negate whatever comes after them.
+# used to avoid matching a claim that's actually being denied, like
+# "I'm not going to tell you the tests passed" or "the build didn't
+# succeed." this isn't real negation handling, just a guard against the
+# most common ways someone denies a claim right before stating it.
+_NEGATION_CUE_RE = re.compile(
+    r"\b(not|never|no)\b|"
+    r"\b(?:did|does|is|was|were|are|can|could|would|should|won)n['’]t\b",
+    re.I,
+)
+
+
+def _preceded_by_negation(text, start, window=45):
+    preceding = text[max(0, start - window):start]
+    return bool(_NEGATION_CUE_RE.search(preceding))
+
+
+_TEST_PASSED_RE = re.compile(
+    r"\btests?\s+(?:(?:is|are)\s+)?(?:still\s+|now\s+|already\s+|finally\s+)?"
+    r"(?:pass(?:ed|ing)?|succeeded)\b"
+    r"|\b(?:everything|all)(?:'s|\s+is)?\s+green\b",
+    re.I,
+)
+_TEST_FAILED_RE = re.compile(
+    r"\btests?\s+(?:(?:is|are)\s+)?(?:still\s+)?"
+    r"(?:fail(?:ed|ing)?|did\s+not\s+pass|didn['’]t\s+pass)\b",
+    re.I,
+)
+_BUILD_SUCCEEDED_RE = re.compile(
+    r"\bbuild\s+(?:(?:is|are)\s+)?(?:succeed(?:ed|s|ing)?|pass(?:ed|es|ing)?|success(?:ful)?)\b", re.I
+)
+_BUILD_FAILED_RE = re.compile(
+    r"\bbuild\s+(?:(?:is|are)\s+)?(?:fail(?:ed|s|ing)?|broke|broken)\b", re.I
+)
 _COMMIT_RE = re.compile(
     r"\bcommit\s+(was\s+)?created\b|\bcommitted\s+the\s+changes\b|\bchanges\s+(were\s+)?committed\b",
     re.I,
@@ -31,6 +63,21 @@ _FILE_RE_C = re.compile(r"\bfile\s+(\S+)\s+was\s+created\b", re.I)
 _FILE_RE_NO_NAME = re.compile(r"\bfile\s+was\s+created\b", re.I)
 
 
+# priority order: more specific claim types first. also used directly
+# by parse_claims_multi to find every claim in a longer message.
+_ALL_PATTERNS = [
+    ("FILE_CREATED", _FILE_RE_A, lambda m: {"filename": m.group(1)}),
+    ("FILE_CREATED", _FILE_RE_B, lambda m: {"filename": m.group(1)}),
+    ("FILE_CREATED", _FILE_RE_C, lambda m: {"filename": m.group(1)}),
+    ("FILE_CREATED", _FILE_RE_NO_NAME, lambda m: {"filename": None}),
+    ("COMMIT_CREATED", _COMMIT_RE, lambda m: {}),
+    ("BUILD_FAILED", _BUILD_FAILED_RE, lambda m: {}),
+    ("BUILD_SUCCEEDED", _BUILD_SUCCEEDED_RE, lambda m: {}),
+    ("TEST_FAILED", _TEST_FAILED_RE, lambda m: {}),
+    ("TEST_PASSED", _TEST_PASSED_RE, lambda m: {}),
+]
+
+
 def parse_claim(text):
     """
     Look for a single claim in `text`.
@@ -38,36 +85,12 @@ def parse_claim(text):
     Returns (claim_type, params). claim_type is None if nothing matched,
     which callers must treat as "can't verify this," never as "true."
     """
-    for pattern in (_FILE_RE_A, _FILE_RE_B, _FILE_RE_C):
-        m = pattern.search(text)
-        if m:
-            return "FILE_CREATED", {"filename": m.group(1)}
-    if _FILE_RE_NO_NAME.search(text):
-        return "FILE_CREATED", {"filename": None}
-
-    if _COMMIT_RE.search(text):
-        return "COMMIT_CREATED", {}
-
-    if _BUILD_RE.search(text):
-        return "BUILD_SUCCEEDED", {}
-
-    if _TEST_RE.search(text):
-        return "TEST_PASSED", {}
-
+    for ctype, pattern, params_fn in _ALL_PATTERNS:
+        for m in pattern.finditer(text):
+            if _preceded_by_negation(text, m.start()):
+                continue
+            return ctype, params_fn(m)
     return None, {}
-
-
-# order matters here: more specific patterns for a given claim type go
-# first, so parse_claims_multi picks up the best match at each position
-_ALL_PATTERNS = [
-    ("FILE_CREATED", _FILE_RE_A, lambda m: {"filename": m.group(1)}),
-    ("FILE_CREATED", _FILE_RE_B, lambda m: {"filename": m.group(1)}),
-    ("FILE_CREATED", _FILE_RE_C, lambda m: {"filename": m.group(1)}),
-    ("FILE_CREATED", _FILE_RE_NO_NAME, lambda m: {"filename": None}),
-    ("COMMIT_CREATED", _COMMIT_RE, lambda m: {}),
-    ("BUILD_SUCCEEDED", _BUILD_RE, lambda m: {}),
-    ("TEST_PASSED", _TEST_RE, lambda m: {}),
-]
 
 
 def parse_claims_multi(text):
@@ -79,13 +102,16 @@ def parse_claims_multi(text):
     Returns a list of (claim_type, params, matched_snippet) in the order
     they appear. If two patterns match the same span of text, only the
     first (highest priority) one is kept, so a sentence isn't counted
-    twice.
+    twice. Matches immediately preceded by a negation cue are skipped
+    entirely rather than counted as an assertion.
     """
     found = []
     claimed_spans = []
     for ctype, pattern, params_fn in _ALL_PATTERNS:
         for m in pattern.finditer(text):
             span = m.span()
+            if _preceded_by_negation(text, span[0]):
+                continue
             if any(not (span[1] <= s[0] or span[0] >= s[1]) for s in claimed_spans):
                 continue
             claimed_spans.append(span)

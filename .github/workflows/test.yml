@@ -17,3 +17,7 @@ jobs:
           git config --global user.email "ci@example.com"
           git config --global user.name "ci"
       - run: python3 -m unittest discover -s tests -v
+      - name: confirm the package actually installs and the command works
+        run: |
+          python3 -m pip install .
+          checkclaim --repo . check test "the tests passed" -- python3 -c "exit(0)"

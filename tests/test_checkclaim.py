@@ -18,6 +18,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import claims
+import clipboard
 import ledger
 import reconcile
 import summary
@@ -61,6 +62,59 @@ class ClaimsTests(unittest.TestCase):
         types = [f[0] for f in found]
         self.assertIn("TEST_PASSED", types)
         self.assertIn("FILE_CREATED", types)
+
+    def test_recognizes_test_failed(self):
+        ctype, params = claims.parse_claim("The tests failed.")
+        self.assertEqual(ctype, "TEST_FAILED")
+
+    def test_recognizes_test_did_not_pass(self):
+        ctype, params = claims.parse_claim("The tests did not pass.")
+        self.assertEqual(ctype, "TEST_FAILED")
+
+    def test_recognizes_build_failed(self):
+        ctype, params = claims.parse_claim("The build failed.")
+        self.assertEqual(ctype, "BUILD_FAILED")
+
+    def test_recognizes_build_is_broken(self):
+        ctype, params = claims.parse_claim("The build is broken right now.")
+        self.assertEqual(ctype, "BUILD_FAILED")
+
+    def test_recognizes_tests_still_pass(self):
+        # this exact phrasing was a documented gap: "still" between
+        # "tests" and "pass" used to break the match entirely
+        ctype, params = claims.parse_claim("Tests still pass after the refactor.")
+        self.assertEqual(ctype, "TEST_PASSED")
+
+    def test_recognizes_tests_are_passing(self):
+        ctype, params = claims.parse_claim("The tests are passing now.")
+        self.assertEqual(ctype, "TEST_PASSED")
+
+    def test_recognizes_everythings_green_idiom(self):
+        # another documented gap: a common CI idiom with zero lexical
+        # overlap with "test" or "pass"
+        ctype, params = claims.parse_claim("Everything's green, ready to ship.")
+        self.assertEqual(ctype, "TEST_PASSED")
+
+    def test_recognizes_build_succeeds_present_tense(self):
+        ctype, params = claims.parse_claim("The build succeeds now.")
+        self.assertEqual(ctype, "BUILD_SUCCEEDED")
+
+    def test_negated_claim_is_not_matched(self):
+        # this exact sentence shape was a documented gap: a quoted claim
+        # inside a denial used to get matched as if it were an assertion
+        ctype, params = claims.parse_claim("I'm not going to tell you the tests passed.")
+        self.assertIsNone(ctype)
+
+    def test_negated_build_claim_is_not_matched(self):
+        ctype, params = claims.parse_claim("The build didn't succeed.")
+        self.assertIsNone(ctype)
+
+    def test_negation_guard_does_not_break_a_real_failure_claim(self):
+        # "did not pass" contains a negation word, but it's part of the
+        # claim itself (asserting failure), not a denial of some other
+        # claim, so it must still match as TEST_FAILED
+        ctype, params = claims.parse_claim("The tests did not pass this time.")
+        self.assertEqual(ctype, "TEST_FAILED")
 
 
 class LedgerTests(unittest.TestCase):
@@ -126,6 +180,27 @@ class ReconcileTests(unittest.TestCase):
         result = reconcile.check_test_passed(self.repo)
         self.assertEqual(result["status"], "UNKNOWN")
 
+    def test_test_failed_verified_when_command_actually_failed(self):
+        ledger.record_run(self.repo, "test", ["python3", "-c", "exit(1)"])
+        result = reconcile.check_test_failed(self.repo)
+        self.assertEqual(result["status"], "VERIFIED")
+
+    def test_test_failed_contradiction_when_tests_actually_passed(self):
+        # a dishonest or mistaken "the tests failed" when they didn't
+        ledger.record_run(self.repo, "test", ["python3", "-c", "exit(0)"])
+        result = reconcile.check_test_failed(self.repo)
+        self.assertEqual(result["status"], "CONTRADICTION")
+
+    def test_build_failed_verified_when_build_actually_failed(self):
+        ledger.record_run(self.repo, "build", ["python3", "-c", "exit(1)"])
+        result = reconcile.check_build_failed(self.repo)
+        self.assertEqual(result["status"], "VERIFIED")
+
+    def test_build_failed_contradiction_when_build_actually_succeeded(self):
+        ledger.record_run(self.repo, "build", ["python3", "-c", "exit(0)"])
+        result = reconcile.check_build_failed(self.repo)
+        self.assertEqual(result["status"], "CONTRADICTION")
+
     def test_stale_after_code_changes_since_the_run(self):
         with open(os.path.join(self.repo, "app.py"), "w") as f:
             f.write("print('v1')")
@@ -139,6 +214,23 @@ class ReconcileTests(unittest.TestCase):
             f.write("print('v2, broken now maybe')")
 
         result = reconcile.check_test_passed(self.repo)
+        self.assertEqual(result["status"], "UNKNOWN")
+        self.assertIn("stale", result["output"])
+
+    def test_staleness_also_applies_to_the_failed_check(self):
+        # staleness is shared logic underneath both directions, confirm
+        # the failed-claim path didn't lose it in the refactor
+        with open(os.path.join(self.repo, "app.py"), "w") as f:
+            f.write("print('v1')")
+        run_git(self.repo, "add", "-A")
+        run_git(self.repo, "-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-q", "-m", "v1")
+
+        ledger.record_run(self.repo, "test", ["python3", "-c", "exit(1)"])
+
+        with open(os.path.join(self.repo, "app.py"), "w") as f:
+            f.write("print('v2')")
+
+        result = reconcile.check_test_failed(self.repo)
         self.assertEqual(result["status"], "UNKNOWN")
         self.assertIn("stale", result["output"])
 
@@ -230,6 +322,15 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("CONTRADICTION     1", report)
         self.assertIn("UNKNOWN           1", report)
         self.assertIn("claim text not recognized:  1", report)
+
+
+class ClipboardTests(unittest.TestCase):
+    def test_read_returns_a_text_error_pair_without_crashing(self):
+        # not asserting on actual clipboard contents, CI machines don't
+        # have a real clipboard. just confirming this never raises and
+        # always returns exactly one of (text, error) as non-None.
+        text, err = clipboard.read()
+        self.assertTrue((text is None) != (err is None))
 
 
 if __name__ == "__main__":

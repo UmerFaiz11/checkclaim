@@ -16,7 +16,7 @@ import time
 import ledger
 
 
-def _from_ledger(repo_dir, name):
+def _from_ledger(repo_dir, name, expect_success=True):
     entry = ledger.get_last_run(repo_dir, name)
     if entry is None:
         return {
@@ -52,7 +52,9 @@ def _from_ledger(repo_dir, name):
             "output": "stale: the code has changed since this command last ran",
         }
 
-    verdict = "VERIFIED" if entry["exit_code"] == 0 else "CONTRADICTION"
+    succeeded = entry["exit_code"] == 0
+    matches_claim = succeeded if expect_success else not succeeded
+    verdict = "VERIFIED" if matches_claim else "CONTRADICTION"
     return {
         "status": verdict,
         "evidence_desc": cmd_desc,
@@ -62,11 +64,19 @@ def _from_ledger(repo_dir, name):
 
 
 def check_test_passed(repo_dir):
-    return _from_ledger(repo_dir, "test")
+    return _from_ledger(repo_dir, "test", expect_success=True)
+
+
+def check_test_failed(repo_dir):
+    return _from_ledger(repo_dir, "test", expect_success=False)
 
 
 def check_build_succeeded(repo_dir):
-    return _from_ledger(repo_dir, "build")
+    return _from_ledger(repo_dir, "build", expect_success=True)
+
+
+def check_build_failed(repo_dir):
+    return _from_ledger(repo_dir, "build", expect_success=False)
 
 
 def check_commit_created(repo_dir, freshness_seconds=300):

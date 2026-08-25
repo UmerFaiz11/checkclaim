@@ -185,13 +185,42 @@ why the UNKNOWNs happened:
   no evidence recorded:       0
 ```
 
-You can also check one specific claim yourself, by hand, without waiting for the hook to
-fire on its own:
+## using it without the hook
+
+Not everyone using an AI to write code is on Claude Code. If you're using the free or
+plain claude.ai chat, there's no hook to install, because that chat has no access to your
+files or terminal at all, that's a real platform limit, not something checkclaim can code
+around. But the actual checking logic doesn't care where a claim came from, it just needs
+the text and a way to check it, so you can still use it by hand:
 
 ```bash
-./checkclaim run test -- npm test
-./checkclaim verify "the tests passed"
+# install once, works anywhere on your PATH from then on
+pipx install git+https://github.com/UmerFaiz11/checkclaim.git
+
+# after Claude in chat gives you code and says "the tests should pass now":
+# 1. paste the code into your project yourself, like you already do
+# 2. actually run the tests and check the claim, in one step
+checkclaim check test "the tests should pass now" -- npm test
 ```
+
+`pipx` (or plain `pip install .` if you'd rather run it from the cloned repo) gives you a
+real `checkclaim` command, no need to remember a path to a script. This has been tested
+for real: installed into a clean environment, and `checkclaim check ...` worked
+immediately, no setup beyond the one install command.
+
+If you'd rather not retype Claude's claim, since you probably just copied it anyway to
+grab the code around it, use `--clipboard` instead of typing it out:
+
+```bash
+checkclaim check test --clipboard -- npm test
+checkclaim verify --clipboard
+```
+
+It reads whatever's currently on your clipboard and checks that. Honest tradeoff here:
+this is a deliberate, manual habit, not the invisible safety net the Claude Code hook is.
+Nothing runs automatically, you have to remember to do it. But it's a real 5-second gut
+check before trusting a confident-sounding claim, and it costs one command, not a script
+and a settings file.
 
 ## what it can check today
 
@@ -207,21 +236,42 @@ because it seemed like a good idea.
 
 ## known limitations
 
-Being upfront about these rather than finding out from a GitHub issue:
+Being upfront about these rather than finding out from a GitHub issue. A few of these
+used to be worse and got fixed, noted below, the rest are still open on purpose.
 
-- The regex parser only recognizes positive phrasing for test claims ("tests passed"),
-  not "tests failed." An honest failure report currently falls through as unrecognized,
-  which is safe (becomes UNKNOWN) but incomplete.
-- Some very normal phrasings still slip past the parser, like "tests still pass" or
-  "everything's green." Same deal, safe but incomplete.
-- The parser doesn't understand negation or quotes. A sentence that quotes and rejects a
-  claim can still get matched as if it were asserting it.
+- **Fixed:** the parser used to only recognize positive test phrasing ("tests passed"),
+  so an honest "tests failed" report fell through as unrecognized. It now recognizes
+  failure claims too ("tests failed," "the build failed," "the build is broken") as
+  their own claim types, checked against the same real evidence, just inverted: a
+  "tests failed" claim is VERIFIED when the recorded exit code is actually non-zero, and
+  CONTRADICTION if the tests actually passed.
+- **Fixed, for the cases actually found:** phrasings like "tests still pass," "tests are
+  passing," "the build succeeds," and the "everything's green" idiom used to slip past
+  the parser entirely. They're recognized now. This is still a fixed list of patterns,
+  not real language understanding, some phrasing will still get past it, that's not
+  something a regex-based parser is ever going to fully solve.
+- **Better, not solved:** the parser now checks a short window of text right before a
+  match for common negation words ("not," "didn't," "never," and similar) and skips the
+  match if one's there. That catches the concrete case that used to break this, "I'm not
+  going to tell you the tests passed," but it's a guard against the common patterns, not
+  real understanding of negation, so it won't catch every way a claim can be denied.
 - If a test/build result is invalidated because the working tree changed, that trigger
   is currently a bit too broad, any file write in the same turn counts, even ones that
-  have nothing to do with the code under test.
+  have nothing to do with the code under test. Not fixed. Doing this properly would mean
+  actually knowing which files a test depends on, which is a meaningfully bigger feature
+  than a quick patch, and since this fails toward an unnecessary UNKNOWN rather than a
+  wrong VERIFIED, it's waiting for real evidence this is actually annoying in practice
+  before building that.
 - Nothing here stops an agent from writing a command that exits 0 without honestly
   testing anything. checkclaim trusts the exit code as real evidence, it can't tell if
-  the command itself was dishonest.
+  the command itself was dishonest. There's a partial mitigation already: the automatic
+  Stop hook only treats a command as "test" or "build" evidence if it matches a known
+  test runner (npm test, pytest, go test, and similar), so a made-up one-liner claiming
+  to be the test suite wouldn't get picked up that way. The manual CLI has no such
+  guard, it trusts whatever command you explicitly tell it to run, which is reasonable
+  since you're the one who typed it. Fully solving this would mean either an LLM judging
+  whether a command honestly tests what it claims to (against the whole point of keeping
+  the core deterministic) or a much longer hardcoded allowlist, neither is planned.
 - This has only been built and tested against Claude Code so far.
 
 None of these have produced a false VERIFIED in testing so far, they all fail toward

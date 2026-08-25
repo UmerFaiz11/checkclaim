@@ -1,0 +1,18 @@
+[project]
+name = "checkclaim"
+version = "0.1.0"
+description = "Checks whether an AI coding agent's claims are actually true, using independently captured evidence instead of trusting its self-report."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [{ name = "Umer Faiz" }]
+
+[project.scripts]
+checkclaim = "cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["cli", "claims", "clipboard", "ledger", "reconcile", "summary", "stop_hook"]

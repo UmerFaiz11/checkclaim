@@ -184,8 +184,12 @@ def main():
         for ctype, params, snippet in claim_list:
             if ctype == "TEST_PASSED":
                 r = reconcile.check_test_passed(repo_dir)
+            elif ctype == "TEST_FAILED":
+                r = reconcile.check_test_failed(repo_dir)
             elif ctype == "BUILD_SUCCEEDED":
                 r = reconcile.check_build_succeeded(repo_dir)
+            elif ctype == "BUILD_FAILED":
+                r = reconcile.check_build_failed(repo_dir)
             elif ctype == "COMMIT_CREATED":
                 r = reconcile.check_commit_created(repo_dir)
             elif ctype == "FILE_CREATED":
