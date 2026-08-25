@@ -93,7 +93,12 @@ It'll read `INSTALL.md`, edit `.claude/settings.json` for you, and tell you what
 changed. This isn't a separate mechanism from the manual steps below, it's Claude Code
 doing exactly those same steps for you instead of you doing them by hand.
 
-### option A: by hand (works today, this is what's actually been tested)
+**Important: quote the path in the hook command if it contains spaces.** This bit a real
+test (see below), and it'll bite you too if you cloned this into something like
+`My Projects/checkclaim`. Wrap the path in escaped quotes inside the JSON string, like the
+examples below already do, don't just paste a bare path in.
+
+### option A: by hand
 
 1. Clone this repo somewhere permanent:
    ```bash
@@ -105,7 +110,7 @@ doing exactly those same steps for you instead of you doing them by hand.
    {
      "hooks": {
        "Stop": [
-         { "hooks": [ { "type": "command", "command": "python3 /path/to/checkclaim/stop_hook.py" } ] }
+         { "hooks": [ { "type": "command", "command": "python3 \"/path/to/checkclaim/stop_hook.py\"" } ] }
        ]
      }
    }
@@ -116,7 +121,15 @@ doing exactly those same steps for you instead of you doing them by hand.
 That's it. Just use Claude Code normally. A `.checkclaim/verdicts.jsonl` file will start
 filling up in that project with what actually happened at the end of each turn.
 
-### option B: as a plugin (avoids hand-editing settings.json, not yet verified end to end)
+**Verified for real:** ran this against a genuinely separate, independent headless Claude
+Code session (`claude -p`, not this same conversation) doing real work in a throwaway repo.
+It created a file, ran `npm test` for real, and reported "tests passed". checkclaim's hook
+observed the actual `npm test` call from Claude Code's own transcript, saw the real exit
+code (0), and logged **VERIFIED**. A separate run where the agent claimed "tests passed"
+without ever running anything test-shaped correctly logged **UNKNOWN**. Both outcomes are
+sitting in this repo's commit history as raw evidence, not just a claim in this README.
+
+### option B: as a plugin, avoids hand-editing settings.json
 
 Claude Code has a plugin system, and this repo is laid out as one (`.claude-plugin/plugin.json`
 plus `hooks/hooks.json`), so you can point Claude Code at the cloned folder directly instead
@@ -126,13 +139,18 @@ of copying JSON by hand:
 claude --plugin-dir /path/to/checkclaim
 ```
 
-Being upfront about this one: it's built exactly to the documented plugin schema, but I
-don't have the Claude Code CLI on the machine this was built on, so I haven't been able to
-actually run `--plugin-dir` against it myself yet. If you try it, I'd genuinely like to know
-whether it loads cleanly, that's real information option A doesn't have any way to give me.
-A proper `/plugin install` flow from a public marketplace would need one more file
-(`marketplace.json`) that hasn't been built yet either, so for now `--plugin-dir` is as far
-as this goes.
+**Also verified for real**, same method as option A above: a real, independent headless
+session loaded the plugin this way, ran `npm test`, claimed "tests passed", and checkclaim
+correctly logged VERIFIED. `claude plugin validate` also passes clean against this repo.
+
+One real bug this testing found and fixed: `hooks/hooks.json` originally referenced
+`${CLAUDE_PLUGIN_ROOT}/stop_hook.py` without quotes, which breaks the moment that path
+contains a space (which it did, in testing). Fixed by quoting it. Worth knowing this class
+of bug exists if you ever edit the hook command yourself.
+
+A proper `/plugin install` flow from a public marketplace would still need one more file
+(`marketplace.json`) that hasn't been built yet, so `--plugin-dir` is as far as the plugin
+path goes for now, that part of the earlier caveat still stands.
 
 You can also use it by hand, without the hook:
 

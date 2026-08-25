@@ -29,13 +29,17 @@ user is asking you to protect), not in this checkclaim folder itself.
    Python 3.x version, use `python3` in the next step. Otherwise try `python --version`,
    and use `python` if that's the one that resolves to Python 3.
 
-4. **Edit `.claude/settings.json` in the target project:**
+4. **Edit `.claude/settings.json` in the target project.** Wrap the path in escaped
+   quotes inside the command string, not just a bare path, this matters: if the path
+   contains a space anywhere (very common on Windows, e.g. a folder under "My Documents"),
+   an unquoted path breaks the command when the shell tries to run it. This has actually
+   happened in testing, it's not a hypothetical.
    - If the file doesn't exist, create it with:
      ```json
      {
        "hooks": {
          "Stop": [
-           { "hooks": [ { "type": "command", "command": "<python-command> <absolute-path>/stop_hook.py" } ] }
+           { "hooks": [ { "type": "command", "command": "<python-command> \"<absolute-path>/stop_hook.py\"" } ] }
          ]
        }
      }
