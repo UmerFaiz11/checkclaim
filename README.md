@@ -251,11 +251,17 @@ also what runs in CI on every push, see the badge at the top for current status.
 
 ## status
 
-This has been tested against real headless Claude Code sessions, both adversarial
-scenarios designed to try to trick it, and ordinary real coding tasks. It has not
-produced a false VERIFIED in either kind of testing so far. It has not yet been used by
-anyone other than the person who built it. If you try it and something looks wrong,
-that's genuinely useful information, please open an issue.
+This has been tested against real, independent headless Claude Code sessions (separate
+`claude -p` processes, not the same conversation that wrote this code), covering
+adversarial scenarios designed to try to trick it, ordinary real coding tasks, and both
+install paths described above. It has not produced a false VERIFIED in any of that
+testing so far, and that's the one property this project cares about most.
+
+What it hasn't had yet: a real developer other than the person who built it, using it on
+their own project, for their own reasons. Everything above is closer to "the mechanism
+holds up under real conditions" than "people other than me have found this useful." If
+you try it, especially if something looks wrong or annoying, that's genuinely useful
+information, please open an issue.
 
 ## license
 
